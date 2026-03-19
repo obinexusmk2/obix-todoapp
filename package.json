@@ -12,10 +12,11 @@
     "obix-todoapp": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.backend.json",
-    "build:backend": "tsc -p tsconfig.backend.json",
+    "build": "tsc -p tsconfig.backend.json && npm run postbuild",
+    "postbuild": "node scripts/fix-esm.cjs",
+    "build:backend": "tsc -p tsconfig.backend.json && npm run postbuild",
     "build:ui": "vite build",
-    "build:full": "tsc -p tsconfig.backend.json && npm run build:ui",
+    "build:full": "tsc -p tsconfig.backend.json && npm run build:ui && npm run postbuild",
     "dev": "tsc -p tsconfig.backend.json --watch",
     "dev:ui": "vite",
     "start": "node dist/server/app.js",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/inquirer": "^9.0.9",
     "@types/node": "^20.0.0",

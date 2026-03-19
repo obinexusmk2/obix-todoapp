@@ -217,6 +217,7 @@ export class NoGhostingProtocol {
                         timestamp: Date.now(),
                         type: 'task_created', // reusing type for tracking
                         userId,
+                        teamId: task.teamId,
                         details: {
                             eventId,
                             taskId,

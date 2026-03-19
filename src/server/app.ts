@@ -6,6 +6,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { createTodoApp, Task, Team } from '../core';
 import { TodoDatabase } from './database';
 
@@ -68,8 +69,17 @@ app.post('/api/teams', (req: Request, res: Response) => {
       payload: {
         name,
         description,
-        members,
-        settings,
+        members: members || [],
+        settings: settings || {
+          visibility: 'private',
+          enableNotifications: true,
+          enableReminders: true,
+          reminderThresholdHours: 24,
+          escalationEnabled: true,
+          escalationThresholdHours: 48,
+          requireAcknowledgment: false,
+          acknowledgmentTimeoutHours: 24,
+        },
       },
     });
 
@@ -288,16 +298,36 @@ app.get('/api/compliance/escalations', (req: Request, res: Response) => {
 });
 
 /**
- * Serve static files from UI build
+ * Serve static files from UI build (if available)
  */
-app.use(express.static(path.join(__dirname, '../ui/dist')));
+const uiDistPath = path.join(__dirname, '../ui/dist');
+if (fs.existsSync(uiDistPath)) {
+  app.use(express.static(uiDistPath));
 
-/**
- * Serve index.html for SPA routing
- */
-app.get('/', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../ui/dist/index.html'));
-});
+  /**
+   * Serve index.html for SPA routing
+   */
+  app.get('/', (req: Request, res: Response) => {
+    res.sendFile(path.join(uiDistPath, 'index.html'));
+  });
+} else {
+  /**
+   * UI not built - show API info
+   */
+  app.get('/', (req: Request, res: Response) => {
+    res.json({
+      message: 'OBIX TodoApp - REST API Server',
+      status: 'running',
+      api: {
+        health: '/health',
+        teams: '/api/teams',
+        tasks: '/api/tasks',
+        compliance: '/api/compliance',
+      },
+      note: 'UI dashboard not yet built. Use /health or /api/* endpoints.',
+    });
+  });
+}
 
 /**
  * Error handling

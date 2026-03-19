@@ -238,6 +238,7 @@ export class TodoAppRuntime {
             timestamp: Date.now(),
             type,
             userId: this.state.currentUserId,
+            teamId,
             details,
             severity: 'info',
         };

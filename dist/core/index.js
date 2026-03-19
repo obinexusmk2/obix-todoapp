@@ -2,11 +2,11 @@
  * OBIX TodoApp - Public API
  * Heart/Soul SDK for team collaboration with #NoGhosting protocol
  */
-export * from './types';
-export * from './runtime';
-export * from './noshadowing-protocol';
-import { TodoAppRuntime } from './runtime';
-import { NoGhostingProtocol } from './noshadowing-protocol';
+export * from './types.js';
+export * from './runtime.js';
+export * from './noshadowing-protocol.js';
+import { TodoAppRuntime } from './runtime.js';
+import { NoGhostingProtocol } from './noshadowing-protocol.js';
 /**
  * Create a new TodoApp instance
  */

@@ -6,9 +6,9 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { Table } from 'table';
+import { table } from 'table';
 import { createTodoApp } from '../core';
-import { TodoDatabase } from '../server/database';
+import { TodoDatabase } from '../server/database-memory.js';
 import { v4 as uuid } from 'uuid';
 const program = new Command();
 const todoApp = createTodoApp();
@@ -98,7 +98,7 @@ program
             new Date(team.createdAt).toLocaleDateString(),
         ]),
     ];
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
 });
 /**
  * Tasks command group
@@ -192,7 +192,7 @@ program
             task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A',
         ]),
     ];
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
 });
 program
     .command('task complete <taskId>')
@@ -232,7 +232,7 @@ program
             v.description,
         ]),
     ];
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
 });
 program
     .command('compliance escalations')
@@ -253,7 +253,7 @@ program
             e.recommendedAction,
         ]),
     ];
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
 });
 program
     .command('compliance report <teamId>')
@@ -276,7 +276,7 @@ program
                 m.tasksInProgress.toString(),
             ]),
         ];
-        console.log(Table.table(memberData));
+        console.log(table(memberData));
         if (report.violations.length > 0) {
             console.log(chalk.yellow(`\n⚠️ ${report.violations.length} violations found`));
         }

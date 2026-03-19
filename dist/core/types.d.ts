@@ -92,6 +92,7 @@ export interface ComplianceEvent {
     timestamp: number;
     type: 'task_created' | 'team_modified' | 'member_added' | 'member_removed' | 'policy_violation' | 'escalation';
     userId: string;
+    teamId: string;
     details: Record<string, any>;
     severity: 'info' | 'warning' | 'critical';
 }

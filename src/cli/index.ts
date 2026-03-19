@@ -8,7 +8,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { Table } from 'table';
+import { table } from 'table';
 import { createTodoApp, Task, Team } from '../core';
 import { TodoDatabase } from '../server/database';
 import { v4 as uuid } from 'uuid';
@@ -118,7 +118,7 @@ program
       ]),
     ];
 
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
   });
 
 /**
@@ -222,7 +222,7 @@ program
       ]),
     ];
 
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
   });
 
 program
@@ -268,7 +268,7 @@ program
       ]),
     ];
 
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
   });
 
 program
@@ -294,7 +294,7 @@ program
       ]),
     ];
 
-    console.log(Table.table(tableData));
+    console.log(table(tableData));
   });
 
 program
@@ -324,7 +324,7 @@ program
         ]),
       ];
 
-      console.log(Table.table(memberData));
+      console.log(table(memberData));
 
       if (report.violations.length > 0) {
         console.log(chalk.yellow(`\n⚠️ ${report.violations.length} violations found`));
