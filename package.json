@@ -1,6 +1,7 @@
 {
   "name": "obix-todoapp",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "OBIX TodoApp - Standalone Team Collaboration with #NoGhosting Protocol & SQLite Persistence",
   "author": "OBINexus <okpalan@protonmail.com>",
@@ -11,15 +12,16 @@
     "obix-todoapp": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc && npm run build:ui",
+    "build": "tsc -p tsconfig.backend.json",
+    "build:backend": "tsc -p tsconfig.backend.json",
     "build:ui": "vite build",
-    "dev": "concurrently \"npm run dev:tsc\" \"npm run dev:ui\"",
-    "dev:tsc": "tsc --watch",
+    "build:full": "tsc -p tsconfig.backend.json && npm run build:ui",
+    "dev": "tsc -p tsconfig.backend.json --watch",
     "dev:ui": "vite",
     "start": "node dist/server/app.js",
     "cli": "node dist/cli/index.js",
     "test": "vitest run",
-    "watch": "tsc --watch",
+    "watch": "tsc -p tsconfig.backend.json --watch",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
