@@ -5,12 +5,8 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { createTodoApp } from '../core/index.js';
-import { TodoDatabase } from './database-memory.js';
-// Define __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { createTodoApp } from '../core';
+import { TodoDatabase } from './database';
 const app = express();
 const PORT = process.env.PORT || 3000;
 // Middleware
@@ -63,12 +59,8 @@ app.post('/api/teams', (req, res) => {
             payload: {
                 name,
                 description,
-                members: members || [],
-                settings: settings || {
-                    requireAcknowledgment: false,
-                    acknowledgmentTimeoutHours: 24,
-                    autoEscalationDays: 3,
-                },
+                members,
+                settings,
             },
         });
         const state = todoApp.state();
