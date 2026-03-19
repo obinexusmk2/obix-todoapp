@@ -1,0 +1,507 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf-8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  showstringspaces=false,
+  breakatwhitespace=true,
+  language=TypeScript
+}
+
+\title{OBIX TodoApp Specification}
+\author{OBINexus Ltd.}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document specifies the OBIX TodoApp, a team collaboration task management system implementing the \#NoGhosting Protocol. The specification defines the architecture, data structures, state management, and compliance mechanisms for preventing communication gaps in distributed team workflows.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Purpose}
+The OBIX TodoApp provides a robust foundation for team task management with built-in compliance enforcement. The primary objectives are:
+
+\begin{enumerate}
+  \item Prevent communication gaps (ghosting) through mandatory engagement tracking
+  \item Enable hierarchical task decomposition for complex workflows
+  \item Maintain complete audit trails for compliance verification
+  \item Support distributed teams with offline-capable state management
+  \item Integrate seamlessly with the OBIX Heart/Soul SDK ecosystem
+\end{enumerate}
+
+\subsection{Scope}
+This specification covers:
+\begin{itemize}
+  \item Core runtime and state management (TodoAppRuntime)
+  \item \#NoGhosting Protocol implementation (NoGhostingProtocol)
+  \item Data model and type definitions
+  \item Action dispatch system
+  \item Policy enforcement mechanisms
+  \item Compliance audit trail
+\end{itemize}
+
+\section{Architecture Overview}
+
+\subsection{System Components}
+
+The OBIX TodoApp consists of three primary layers:
+
+\begin{enumerate}
+  \item \textbf{Runtime Layer}: TodoAppRuntime manages state, dispatch, and notifications
+  \item \textbf{Protocol Layer}: NoGhostingProtocol enforces communication standards
+  \item \textbf{Persistence Layer}: Integrates with obix-state for data durability
+\end{enumerate}
+
+\subsection{Design Patterns}
+
+\textbf{State Management Pattern}: Immutable state updates via action dispatch
+
+\begin{lstlisting}
+interface TodoAppState {
+  tasks: Record<string, Task>;
+  teams: Record<string, Team>;
+  currentTeamId: string;
+  currentUserId: string;
+  lastSyncAt: number;
+}
+
+type TodoAppAction =
+  | { type: 'CREATE_TASK'; payload: TaskPayload }
+  | { type: 'UPDATE_TASK'; payload: UpdatePayload }
+  | { type: 'COMPLETE_TASK'; payload: { id: string } }
+  // ... more actions
+\end{lstlisting}
+
+\textbf{Observer Pattern}: Subscribers notified on state changes
+
+\begin{lstlisting}
+runtime.subscribe((state: TodoAppState) => {
+  // React to state updates
+});
+\end{lstlisting}
+
+\textbf{Policy Pattern}: Pluggable validation policies
+
+\begin{lstlisting}
+runtime.addPolicy('custom-rule', (state) => {
+  // Custom validation logic
+  return isValid;
+});
+\end{lstlisting}
+
+\section{Data Model}
+
+\subsection{Task Structure}
+
+Tasks represent individual work items with hierarchical relationships.
+
+\begin{lstlisting}
+interface Task {
+  // Identification
+  id: string;
+  title: string;
+  description: string;
+
+  // Hierarchy
+  parentId?: string;
+  childIds: string[];
+
+  // Assignment
+  assignedTo: string[];
+  createdBy: string;
+  teamId: string;
+
+  // Status & Priority
+  status: 'open' | 'in_progress' | 'blocked' |
+          'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+
+  // Temporal Properties
+  createdAt: number;
+  updatedAt: number;
+  dueDate?: number;
+  completedAt?: number;
+
+  // Engagement Tracking
+  engagementEvents: EngagementEvent[];
+  lastEngagementAt?: number;
+
+  // Metadata
+  tags: string[];
+  attachments: string[];
+  customFields: Record<string, any>;
+}
+\end{lstlisting}
+
+\subsection{Engagement Event Structure}
+
+Engagement events track all interactions for \#NoGhosting compliance.
+
+\begin{lstlisting}
+interface EngagementEvent {
+  id: string;
+  type: 'task_created' | 'task_updated' | 'task_assigned' |
+        'task_completed' | 'comment_added' | 'status_changed' |
+        'deadline_approaching' | 'reminder_sent' |
+        'acknowledgment_received' | 'escalation_triggered';
+  timestamp: number;
+  userId: string;
+  taskId: string;
+  metadata: Record<string, any>;
+  acknowledged: boolean;
+  acknowledgmentDeadline?: number;
+}
+\end{lstlisting}
+
+\subsection{Team Structure}
+
+Teams group collaborators with shared settings and compliance tracking.
+
+\begin{lstlisting}
+interface Team {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: number;
+  updatedAt: number;
+  members: TeamMember[];
+  settings: TeamSettings;
+  complianceTrail: ComplianceEvent[];
+}
+
+interface TeamSettings {
+  visibility: 'private' | 'internal' | 'public';
+  enableNotifications: boolean;
+  enableReminders: boolean;
+  reminderThresholdHours: number;
+  escalationEnabled: boolean;
+  escalationThresholdHours: number;
+  requireAcknowledgment: boolean;
+  acknowledgmentTimeoutHours: number;
+  archiveCompletedTasksDays?: number;
+}
+\end{lstlisting}
+
+\section{State Management}
+
+\subsection{State Update Flow}
+
+\begin{enumerate}
+  \item User dispatches action to TodoAppRuntime
+  \item Runtime validates action against current state
+  \item State is updated immutably
+  \item Compliance events are recorded
+  \item Subscribers are notified asynchronously
+  \item Optional: Persist state via obix-state
+\end{enumerate}
+
+\subsection{Action Types}
+
+\textbf{Task Actions}:
+\begin{itemize}
+  \item CREATE\_TASK: Add new task with initial properties
+  \item UPDATE\_TASK: Modify task properties
+  \item DELETE\_TASK: Remove task from state
+  \item ASSIGN\_TASK: Add user to task assignees
+  \item UNASSIGN\_TASK: Remove user from assignees
+  \item COMPLETE\_TASK: Mark task as completed
+  \item ADD\_ENGAGEMENT\_EVENT: Record interaction
+\end{itemize}
+
+\textbf{Team Actions}:
+\begin{itemize}
+  \item CREATE\_TEAM: Initialize team with members
+  \item ADD\_TEAM\_MEMBER: Onboard collaborator
+  \item REMOVE\_TEAM\_MEMBER: Offboard collaborator
+  \item ADD\_COMPLIANCE\_EVENT: Record audit entry
+\end{itemize}
+
+\section{The \#NoGhosting Protocol}
+
+\subsection{Definition}
+
+The \#NoGhosting Protocol is a comprehensive framework for preventing communication gaps in team collaboration. It enforces:
+
+\begin{itemize}
+  \item \textbf{Clear Assignment}: Every task has explicit ownership
+  \item \textbf{Required Acknowledgment}: Assignments demand explicit confirmation
+  \item \textbf{Activity Monitoring}: Inactivity triggers notifications
+  \item \textbf{Escalation Path}: Critical issues escalate automatically
+  \item \textbf{Audit Trail}: Complete history of all actions
+\end{itemize}
+
+\subsection{Violation Detection}
+
+The protocol detects four violation types:
+
+\begin{enumerate}
+  \item \textbf{unassigned\_critical}: Critical task without assignee
+  \begin{itemize}
+    \item Severity: CRITICAL
+    \item Auto-resolution: Assign task or reduce priority
+  \end{itemize}
+
+  \item \textbf{overdue\_acknowledgment}: Assignment not acknowledged within timeout
+  \begin{itemize}
+    \item Severity: CRITICAL
+    \item Auto-resolution: User acknowledges or task reassigned
+  \end{itemize}
+
+  \item \textbf{stalled\_task}: Task in progress with no activity beyond threshold
+  \begin{itemize}
+    \item Severity: WARNING
+    \item Auto-resolution: Activity recorded or task reassigned
+  \end{itemize}
+
+  \item \textbf{unacknowledged\_assignment}: Assignment event not explicitly confirmed
+  \begin{itemize}
+    \item Severity: INFO
+    \item Auto-resolution: User acknowledges event
+  \end{itemize}
+\end{enumerate}
+
+\subsection{Escalation Logic}
+
+Escalations are triggered when:
+
+\begin{itemize}
+  \item Critical task inactive $>$ escalationThresholdHours (default: 48)
+  \item Any task past due date and not completed
+  \item Critical task assignment unacknowledged $>$ acknowledgmentTimeoutHours
+\end{itemize}
+
+Escalation output includes:
+\begin{itemize}
+  \item Task ID and reason
+  \item Severity level (info, warning, critical)
+  \item Recommended action for team lead
+\end{itemize}
+
+\section{Compliance and Audit Trail}
+
+\subsection{Compliance Event Recording}
+
+Every state modification generates a ComplianceEvent:
+
+\begin{lstlisting}
+interface ComplianceEvent {
+  id: string;
+  timestamp: number;
+  type: 'task_created' | 'team_modified' | 'member_added' |
+        'member_removed' | 'policy_violation' | 'escalation';
+  userId: string;
+  details: Record<string, any>;
+  severity: 'info' | 'warning' | 'critical';
+}
+\end{lstlisting}
+
+\subsection{Audit Trail Structure}
+
+Each team maintains a complianceTrail array containing:
+\begin{itemize}
+  \item Task creation and modification events
+  \item Member lifecycle events (joined, removed, role changed)
+  \item Policy violations and enforcement actions
+  \item Escalation triggers and resolutions
+\end{itemize}
+
+\subsection{Compliance Queries}
+
+The NoGhostingProtocol provides methods for compliance verification:
+
+\begin{itemize}
+  \item \texttt{validateCompliance()}: Returns all current violations
+  \item \texttt{getEngagementReport(teamId)}: Generates team engagement statistics
+  \item \texttt{checkEscalations()}: Identifies escalation-worthy tasks
+\end{itemize}
+
+\section{Engagement Reporting}
+
+\subsection{Report Structure}
+
+\begin{lstlisting}
+interface EngagementReport {
+  teamId: string;
+  totalTasks: number;
+  engagementRate: number;  // 0.0 to 1.0
+  averageResponseTime: number;  // milliseconds
+  violations: NoGhostingViolation[];
+  memberEngagement: Record<string,
+                   MemberEngagementStats>;
+}
+
+interface MemberEngagementStats {
+  userId: string;
+  name: string;
+  tasksAssigned: number;
+  tasksCompleted: number;
+  tasksInProgress: number;
+  tasksBlocked: number;
+  averageCompletionTime: number;
+  lastActivityAt: number;
+  acknowledgedCount: number;
+  unacknowledgedCount: number;
+  escalationCount: number;
+}
+\end{lstlisting}
+
+\subsection{Metrics Calculation}
+
+\textbf{Engagement Rate}:
+$$\text{engagementRate} = \frac{\text{acknowledgedCount}}{\text{acknowledgedCount} + \text{unacknowledgedCount}}$$
+
+\textbf{Average Completion Time}:
+$$\text{avgCompletionTime} = \frac{\sum (\text{completedAt} - \text{createdAt})}{\text{completedCount}}$$
+
+\textbf{Task Completion Percentage}:
+$$\text{completionRate} = \frac{\text{tasksCompleted}}{\text{tasksAssigned}}$$
+
+\section{Integration with OBIX Ecosystem}
+
+\subsection{obix-core Integration}
+
+TodoAppRuntime leverages obix-core for:
+\begin{itemize}
+  \item Policy enforcement system
+  \item Component lifecycle hooks
+  \item Instance tracking and management
+\end{itemize}
+
+\subsection{obix-state Integration}
+
+Persists TodoAppState to:
+\begin{itemize}
+  \item IndexedDB (client-side)
+  \item Backend database (server-side)
+  \item Synchronizes across devices via obix-adapter
+\end{itemize}
+
+\subsection{Future Integrations}
+
+\begin{itemize}
+  \item \textbf{obix-components}: React UI components for task management
+  \item \textbf{obix-router}: Deep-linking and navigation state
+  \item \textbf{obix-telemetry}: Analytics and monitoring
+  \item \textbf{obix-forms}: Form validation for task creation
+\end{itemize}
+
+\section{Performance Characteristics}
+
+\subsection{Complexity Analysis}
+
+\begin{itemize}
+  \item \textbf{Task Lookup}: $O(1)$ via hash map indexing
+  \item \textbf{Team Lookup}: $O(1)$ via hash map indexing
+  \item \textbf{Compliance Validation}: $O(n)$ where $n = |\text{tasks}|$
+  \item \textbf{Engagement Reporting}: $O(n \cdot m)$ where $m = \text{avg events/task}$
+  \item \textbf{State Update}: $O(1)$ amortized
+  \item \textbf{Subscription Notification}: $O(s)$ where $s = |\text{subscribers}|$
+\end{itemize}
+
+\subsection{Memory Optimization}
+
+\begin{itemize}
+  \item Tasks indexed by ID for $O(1)$ lookup
+  \item Teams indexed by ID for $O(1)$ lookup
+  \item EngagementEvents kept per-task (not global index)
+  \item Immutable state reduces copy overhead
+\end{itemize}
+
+\section{Error Handling}
+
+\subsection{Error Types}
+
+\begin{itemize}
+  \item \textbf{TaskNotFound}: Referenced task does not exist
+  \item \textbf{TeamNotFound}: Referenced team does not exist
+  \item \textbf{InvalidAction}: Action malformed or type mismatch
+  \item \textbf{PolicyViolation}: Action violates configured policy
+\end{itemize}
+
+\subsection{Error Recovery}
+
+\begin{itemize}
+  \item Errors thrown immediately on dispatch
+  \item State remains unchanged on error
+  \item Caller responsible for error handling
+  \item Compliance trail records policy violations
+\end{itemize}
+
+\section{Security Considerations}
+
+\subsection{Access Control}
+
+TeamMember roles define capabilities:
+\begin{itemize}
+  \item \textbf{owner}: Full team control
+  \item \textbf{maintainer}: Can modify tasks, manage members
+  \item \textbf{contributor}: Can update assigned tasks
+  \item \textbf{viewer}: Read-only access
+\end{itemize}
+
+\subsection{Data Sensitivity}
+
+\begin{itemize}
+  \item Compliance trails immutable once recorded
+  \item User IDs in metadata (no PII directly stored)
+  \item Audit trails retained per team settings
+  \item No encryption at application layer (delegate to obix-state)
+\end{itemize}
+
+\section{Testing Strategy}
+
+\subsection{Test Coverage}
+
+\begin{itemize}
+  \item \textbf{Unit Tests}: Individual method behavior
+  \item \textbf{Integration Tests}: State management flow
+  \item \textbf{Compliance Tests}: \#NoGhosting policy enforcement
+  \item \textbf{Performance Tests}: Benchmarks at scale
+\end{itemize}
+
+\subsection{Test Scenarios}
+
+\begin{itemize}
+  \item Creating tasks with hierarchical relationships
+  \item Assigning tasks and tracking acknowledgments
+  \item Detecting stalled and overdue tasks
+  \item Generating engagement reports
+  \item Recording compliance events
+  \item Escalation trigger conditions
+\end{itemize}
+
+\section{Version History}
+
+\begin{itemize}
+  \item \textbf{0.1.0} (March 2026): Initial specification and implementation
+  \begin{itemize}
+    \item Core TodoAppRuntime
+    \item \#NoGhosting Protocol
+    \item Compliance audit trail
+    \item Integration tests
+  \end{itemize}
+\end{itemize}
+
+\section{Conclusion}
+
+The OBIX TodoApp provides a comprehensive, standards-based framework for team task management with embedded compliance enforcement. By implementing the \#NoGhosting Protocol, it eliminates communication gaps while maintaining complete auditability for distributed team workflows.
+
+\end{document}
