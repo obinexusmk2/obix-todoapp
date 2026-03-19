@@ -14,8 +14,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleResolution": "node",
-    "jsx": "react-jsx",
-    "types": ["node", "vite/client"]
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "__tests__"]
